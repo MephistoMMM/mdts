@@ -1,0 +1,7 @@
+# emacs
+.#*
+
+# go
+pkg/
+bin/
+vendor/
