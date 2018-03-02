@@ -6,8 +6,9 @@ package main
 import (
 	"encoding/json"
 	"log"
-	pts "mdts/protocols/req2dts"
 	"os"
+	pts "players/protocols/pingpong"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,9 @@ import (
 )
 
 const (
-	dtsAddress   = "http://127.0.0.1:8081/v1/t2s"
+	dtsAddress   = "http://127.0.0.1:8081/v1/"
 	pingHostport = ":9000"
+	tid          = "a3x77n02UI3YWnhqr45UBe4AMCCq65NN"
 )
 
 var (
@@ -51,40 +53,16 @@ var (
 *   | RePong | Number |
  */
 
-type ppiReq struct {
-	Ping int `json:"Ping"`
-}
-
-type ppiResp struct {
-	RePing int `json:"RePing"`
-}
-
-type ppoReq struct {
-	Pong int `json:"Pong"`
-}
-
-type ppoResp struct {
-	RePong int `json:"RePong"`
-}
-
 func pong(c *gin.Context) {
 	// Pong
-	var reqData pts.RespS2T
-	if err := c.ShouldBindJSON(&reqData); err != nil {
-		log.Fatalf("Pong Error: %v.", err)
-	}
 
-	if reqData.Code != pts.SUCCESS {
-		log.Fatalf("Pong Error: FAILED, %s.", reqData.Message)
-	}
-
-	var reqppdata ppoReq
-	if err := json.Unmarshal([]byte(reqData.Data), &reqppdata); err != nil {
+	_, body, err := pts.ParsePongS2T(c)
+	if err != nil {
 		log.Fatalf("Pong Error: %v.", err)
 	}
 
 	// Show Pong Data
-	log.Printf("Pong: %d.", reqppdata.Pong)
+	log.Printf("Pong Ball: %d.", body.Ball)
 	hasBall = true
 
 	go func() {
@@ -97,49 +75,56 @@ func pong(c *gin.Context) {
 		}
 
 		// Ping
-		ppdata := ppiReq{
-			Ping: pingPongCount,
+		ball := strconv.Itoa(pingPongCount)
+		data := pts.BodyPingT2S{
+			Ball:   ball,
+			Time:   time.Now().UnixNano(),
+			Sender: tid,
 		}
 
-		byt, _ := json.Marshal(&ppdata)
-		data := pts.BodyT2S{
-			Data: string(byt),
-		}
-
-		_, _, errs := req.Post(dtsAddress).Type("json").
-			Set("TID", "a3x77n02UI3YWnhqr45UBe4AMCCq65NN").
+		_, body, errs := req.Post(dtsAddress+"pingt2s").Type("json").
+			Set("Version", "1.0.0").
 			SendStruct(data).EndBytes()
 		if errs != nil {
 			log.Fatalf("Ping Error: %v.", errs)
 		}
 		hasBall = false
 		pingPongCount--
+
+		var reqData pts.CommResp
+		if err := json.Unmarshal(body, &reqData); err != nil {
+			log.Fatalf("Response Ping Error: %v.", err)
+		}
+
+		if reqData.Code != pts.SUCCESS {
+			log.Fatalf("Response Ping Error: FAILED, %s.", reqData.Message)
+		}
+
+		log.Println(reqData.Data)
 	}()
 
-	respppdata := ppoResp{
-		RePong: reqppdata.Pong,
-	}
-
-	c.JSON(200, &respppdata)
+	c.JSON(200, &pts.CommResp{
+		Code:    pts.SUCCESS,
+		Message: "",
+		Data:    body.Ball,
+	})
 }
 
 func main() {
 	router := gin.Default()
-	router.POST("/thirdpong", pong)
+	router.POST("/pongs2t", pong)
 
 	go func() {
 		// Ping
-		ppdata := ppiReq{
-			Ping: pingPongCount,
+		ball := strconv.Itoa(pingPongCount)
+		data := pts.BodyPingT2S{
+			Ball:   ball,
+			Time:   time.Now().UnixNano(),
+			Sender: tid,
 		}
 
-		byt, _ := json.Marshal(&ppdata)
-		data := pts.BodyT2S{
-			Data: string(byt),
-		}
-
-		_, body, errs := req.Post(dtsAddress).Type("json").
-			Set("TID", "a3x77n02UI3YWnhqr45UBe4AMCCq65NN").
+		_, body, errs := req.Post(dtsAddress+"pingt2s").Type("json").
+			Set("Version", "1.0.0").
 			SendStruct(data).EndBytes()
 		if errs != nil {
 			log.Fatalf("Ping Error: %v.", errs)
@@ -147,13 +132,13 @@ func main() {
 		hasBall = false
 		pingPongCount--
 
-		var reqData pts.RespS2T
+		var reqData pts.CommResp
 		if err := json.Unmarshal(body, &reqData); err != nil {
-			log.Fatalf("Pong Error: %v.", err)
+			log.Fatalf("Response Ping Error: %v.", err)
 		}
 
 		if reqData.Code != pts.SUCCESS {
-			log.Fatalf("Pong Error: FAILED, %s.", reqData.Message)
+			log.Fatalf("Response Ping Error: FAILED, %s.", reqData.Message)
 		}
 
 		log.Println(reqData.Data)

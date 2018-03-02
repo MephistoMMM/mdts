@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
-	pts "mdts/protocols/req2dts"
+	pts "mdts/protocols/pingpong"
 
 	"github.com/gin-gonic/gin"
 )

@@ -2,7 +2,7 @@ package routers
 
 import (
 	"io/ioutil"
-	pts "mdts/protocols/req2dts"
+	pts "mdts/protocols/pingpong"
 	"testing"
 	"time"
 
