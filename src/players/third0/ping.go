@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	dtsAddress   = "http://127.0.0.1:8081/v1/"
-	pingHostport = ":9000"
-	tid          = "a3x77n02UI3YWnhqr45UBe4AMCCq65NN"
+	dtsAddress = "http://127.0.0.1:7081/v1/"
+	hostport   = ":9000"
+	tid        = "a3x77n02UI3YWnhqr45UBe4AMCCq65NN"
 )
 
 var (
@@ -27,42 +27,16 @@ var (
 	hasBall       = true
 )
 
-/* Ping-Pong protocol
-*
-* http post /thirdping
-* Content-Type: application/json
-*
-* Request:
-*   | Key  | Type   |
-*   | -----+------- |
-*   | Ping | Number |
-*
-* Response:
-*   | Key  | Type   |
-*   | -----+------- |
-*   | RePing | Number |
-*
-* Request:
-*   | Key  | Type   |
-*   | -----+------- |
-*   | Pong | Number |
-*
-* Response:
-*   | Key  | Type   |
-*   | -----+------- |
-*   | RePong | Number |
- */
-
-func pong(c *gin.Context) {
+func receivePong(c *gin.Context) {
 	// Pong
+	var body pts.BodyPongS2T
 
-	_, body, err := pts.ParsePongS2T(c)
-	if err != nil {
-		log.Fatalf("Pong Error: %v.", err)
+	if err := c.ShouldBindJSON(&body); err != nil {
+		log.Fatalf("Ping Error: %v.", err)
 	}
 
 	// Show Pong Data
-	log.Printf("Pong Ball: %d.", body.Ball)
+	log.Printf("Receive Pong Ball(%s).", body.Ball)
 	hasBall = true
 
 	go func() {
@@ -100,7 +74,7 @@ func pong(c *gin.Context) {
 			log.Fatalf("Response Ping Error: FAILED, %s.", reqData.Message)
 		}
 
-		log.Println(reqData.Data)
+		log.Printf("Ping Ball(%s) Success.", reqData.Data)
 	}()
 
 	c.JSON(200, &pts.CommResp{
@@ -112,7 +86,7 @@ func pong(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
-	router.POST("/pongs2t", pong)
+	router.POST("/pongs2t", receivePong)
 
 	go func() {
 		// Ping
@@ -141,10 +115,10 @@ func main() {
 			log.Fatalf("Response Ping Error: FAILED, %s.", reqData.Message)
 		}
 
-		log.Println(reqData.Data)
+		log.Printf("Ping Ball(%s) Success.", reqData.Data)
 	}()
 
-	if err := router.Run(pingHostport); err != nil {
+	if err := router.Run(hostport); err != nil {
 		log.Fatalln("Failed to run server: ", err)
 	}
 }
