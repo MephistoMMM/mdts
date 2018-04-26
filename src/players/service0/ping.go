@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	pts "players/protocols/pingpong"
+	pts "players/protocols/dtsproto"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,70 +20,66 @@ const (
 	version    = "1.0.0"
 )
 
-var (
-	req           = gorequest.New()
-	pingPongCount = 5
-	hasBall       = false
-)
+var req = gorequest.New()
 
-func receivePing(c *gin.Context) {
-	// Ping
-	var body pts.BodyPingT2S
+func sendCancelOrder() {
+	data := `{"orderCode":"12345678", "remark":"Just A Test"}`
+
+	_, body, errs := req.Post(dtsAddress+"s2t").Type("json").
+		Set("Sender", "1.0.0").
+		Set("TID", "a3x77n02").
+		Set("APICODE", "00000002").
+		Send(data).EndBytes()
+	if errs != nil {
+		log.Fatalf("Ping Error: %v.", errs)
+	}
+
+	var resData pts.CommResp
+	if err := json.Unmarshal(body, &resData); err != nil {
+		log.Fatalf("Send Cancel Order Error: %v. \n", err)
+	}
+	if resData.Code != pts.SUCCESS {
+		log.Fatalf("Send Cancel Order Error: FAILED, %s.\n", resData.Message)
+	}
+
+	log.Printf("Cancel Order Success: %s .\n", string(resData.Data))
+}
+
+func receiveRefuseOrder(c *gin.Context) {
+	var body struct {
+		OrderCode  string   `json:"orderCode"`
+		ReasonType []string `json:"reasonType"`
+		Remark     string   `json:"remark"`
+	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		log.Fatalf("Ping Error: %v.", err)
+		log.Fatalf("Receive Refuse Order Error: %v.", err)
 	}
 
 	// Show Ping Data
-	log.Printf("Receive Ping Ball(%s).", body.Ball)
-	hasBall = true
+	log.Printf("Receive Refuse Order: {code: '%s', reasonType: %v, remark: '%s'}.",
+		body.OrderCode, body.ReasonType, body.Remark)
 
 	go func() {
-
-		time.Sleep(time.Millisecond * 500)
-
-		// Pong
-		data := pts.BodyPingT2S{
-			Ball: body.Ball,
-			Time: time.Now().UnixNano(),
-		}
-
-		_, body, errs := req.Post(dtsAddress+"pongs2t").Type("json").
-			Set("TID", body.Sender).
-			SendStruct(data).EndBytes()
-		if errs != nil {
-			log.Fatalf("Ping Error: %v.", errs)
-		}
-		hasBall = false
-
-		var reqData pts.CommResp
-		if err := json.Unmarshal(body, &reqData); err != nil {
-			log.Fatalf("Response Ping Error: %v.", err)
-		}
-
-		if reqData.Code != pts.SUCCESS {
-			log.Fatalf("Response Ping Error: FAILED, %s.", reqData.Message)
-		}
-
-		log.Printf("Pong Ball(%s) Success.", reqData.Data)
-		pingPongCount--
-
-		// check to end
-		if pingPongCount < 0 {
-			os.Exit(0)
-		}
+		time.Sleep(2000 * time.Millisecond)
+		os.Exit(0)
 	}()
 
 	c.JSON(200, &pts.CommResp{
 		Code:    pts.SUCCESS,
 		Message: "",
-		Data:    body.Ball,
+		Data:    []byte("{}"),
 	})
 }
 
 func main() {
 	router := gin.Default()
-	router.POST("/pingt2s", receivePing)
+	router.POST("/rescue/refuseOrder", receiveRefuseOrder)
+
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		sendCancelOrder()
+	}()
 
 	if err := router.Run(hostport); err != nil {
 		log.Fatalln("Failed to run server: ", err)

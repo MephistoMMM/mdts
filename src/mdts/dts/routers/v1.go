@@ -16,8 +16,7 @@ func installV1RoutesOut(r *gin.RouterGroup) {
 		r.POST("echo", handlers.Echo)
 	}
 
-	r.POST(conf.V1PingT2SPath, handlers.PingZeroForOut)
-	r.POST(conf.V1PongT2SPath, handlers.PongZeroForOut)
+	r.POST(conf.V1T2SPath, handlers.HandleT2S)
 }
 
 func installV1RoutesIn(r *gin.RouterGroup) {
@@ -28,8 +27,7 @@ func installV1RoutesIn(r *gin.RouterGroup) {
 		r.POST("echo", handlers.Echo)
 	}
 
-	r.POST(conf.V1PingS2TPath, handlers.PingZeroForIn)
-	r.POST(conf.V1PongS2TPath, handlers.PongZeroForIn)
+	r.POST(conf.V1S2TPath, handlers.HandleS2T)
 }
 
 // V1RoutersOut 实现version1对WAN的所有接口

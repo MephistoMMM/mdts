@@ -75,6 +75,25 @@ func PostXML(hostport string, v string) (*http.Response, []byte, error) {
 	return useReqDo(action)
 }
 
+// PostBytes send post request and get response
+func PostBytes(hostport string, bs []byte) (*http.Response, []byte, error) {
+
+	action := func(req *greq.SuperAgent) (resp *http.Response, body []byte, err error) {
+
+		var errs []error
+		resp, body, errs = req.Post(hostport).Type("json").
+			Send(string(bs)).EndBytes()
+
+		if errs != nil {
+			err = fmt.Errorf("RequestError: %v", errs)
+		}
+
+		return
+	}
+
+	return useReqDo(action)
+}
+
 // Post send post request and get response
 func Post(hostport string, json interface{}) (*http.Response, []byte, error) {
 

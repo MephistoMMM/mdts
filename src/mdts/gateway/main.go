@@ -24,6 +24,8 @@ func redirectForOut(c *gin.Context) {
 }
 
 func redirectForIn(c *gin.Context) {
+	bs, _ := c.GetRawData()
+	log.Println(string(bs))
 	c.Redirect(307, "http://127.0.0.1:8080"+c.Request.URL.Path)
 }
 
