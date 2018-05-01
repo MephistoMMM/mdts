@@ -18,22 +18,6 @@ const (
 	FAILED  respcode = 1
 )
 
-type statecode uint8
-
-const (
-	WELL  statecode = 0
-	ABEND statecode = 1
-)
-
-type methodcode uint8
-
-const (
-	HTTPGET methodcode = 0
-	HTTPPOST
-	HTTPDELETE
-	HTTPPUT
-)
-
 // CommResp is the common response struct
 type CommResp struct {
 	Code    respcode

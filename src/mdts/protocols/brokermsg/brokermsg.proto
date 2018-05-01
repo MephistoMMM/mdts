@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package brokergrpc
+package brokermsg;
 
 enum EnumState {
   SUCCESS = 0;
@@ -18,7 +18,7 @@ enum EnumMethod {
 
 // ** GRPC TransforDataToThird
 
-message ParametersToThird {
+message ParamToThird {
   string TID = 1;
   string APICODE = 2;
   bytes Data = 3;
@@ -29,12 +29,12 @@ message ResultToThird {
   EnumMethod Method = 2;
   map<string, string> Head = 3;
   bytes Body = 4;
-  string Url = 5;
+  string URL = 5;
 }
 
 // ** GRPC TransforDataFromThird
 
-message ParametersFromThird {
+message ParamFromThird {
   string TID = 1;
   string APICODE = 2;
   bytes Data = 3;
@@ -50,7 +50,7 @@ message ResultFromThird {
 
 // ** GRPC TransforDataToService
 
-message ParametersToService {
+message ParamToService {
   string Version = 1;
   string APICODE = 2;
   bytes Data = 3;
@@ -61,12 +61,12 @@ message ResultToService {
   EnumMethod Method = 2;
   map<string, string> Head = 3;
   bytes Body = 4;
-  string Url = 5;
+  string URL = 5;
 }
 
 // ** GRPC TransforDataFromService
 
-message ParametersFromService {
+message ParamFromService {
   string Version = 1;
   string APICODE = 2;
   bytes Data = 3;

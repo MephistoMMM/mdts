@@ -21,7 +21,14 @@
 
 [[projects]]
   name = "github.com/golang/protobuf"
-  packages = ["proto"]
+  packages = [
+    "proto",
+    "protoc-gen-go",
+    "protoc-gen-go/descriptor",
+    "protoc-gen-go/generator",
+    "protoc-gen-go/grpc",
+    "protoc-gen-go/plugin"
+  ]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
   version = "v1.0.0"
 
@@ -31,21 +38,6 @@
   packages = ["errgroup"]
   revision = "fd80eb99c8f653c847d294a001bdf2a3a6f768f5"
   source = "github.com/golang/sync"
-
-[[projects]]
-  name = "github.com/jinzhu/gorm"
-  packages = [
-    ".",
-    "dialects/sqlite"
-  ]
-  revision = "5174cc5c242a728b435ea2be8a2f7f998e15429b"
-  version = "v1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/jinzhu/inflection"
-  packages = ["."]
-  revision = "1c35d901db3da928c72a72d8458480cc9ade058f"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -58,12 +50,6 @@
   packages = ["."]
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
   version = "v0.0.3"
-
-[[projects]]
-  name = "github.com/mattn/go-sqlite3"
-  packages = ["."]
-  revision = "6c771bb9887719704b210e87e934f08be014bdb1"
-  version = "v1.6.0"
 
 [[projects]]
   branch = "master"
@@ -150,6 +136,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6935cbb89dd3f83717e0193f47233891c942120383f3a678c15fea6d0dfcaa02"
+  inputs-digest = "ba4e8c38cae7c6920a862b1360535563c6cefccba27df640b42f49374c26d6eb"
   solver-name = "gps-cdcl"
   solver-version = 1
