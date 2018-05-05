@@ -1,4 +1,4 @@
-package s2t
+package base
 
 import bmsg "mdts/protocols/brokermsg"
 
@@ -17,6 +17,6 @@ type TransFromResult struct {
 // Transformer need to be implementec by broker entity.
 type Transformer interface {
 	ID() string
-	TransTo(APICODE string, Data []byte) (TransToResult, error)
-	TransFrom(APICODE string, Data []byte) (TransFromResult, error)
+	TransTo(APICODE string, Data []byte) (*TransToResult, error)
+	TransFrom(APICODE string, Data []byte) (*TransFromResult, error)
 }

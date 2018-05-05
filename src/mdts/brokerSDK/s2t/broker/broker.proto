@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package broker;
 
-import "brokermsg.proto";
+import "mdts/protocols/brokermsg/brokermsg.proto";
 
 service S2TBroker {
 

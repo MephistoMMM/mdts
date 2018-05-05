@@ -1,11 +1,11 @@
-package s2t
+package t2s
 
 import (
 	"context"
 	"errors"
 	"log"
 	"mdts/brokerSDK/base"
-	pb "mdts/brokerSDK/s2t/broker"
+	pb "mdts/brokerSDK/t2s/broker"
 	bmsg "mdts/protocols/brokermsg"
 	"net"
 
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	errConflictOfID = errors.New("Error Conflict Of TID")
+	errConflictOfID = errors.New("Error Conflict Of Version")
 )
 
 // Server provide a method to run a grpc server
@@ -21,9 +21,9 @@ type Server struct {
 	t base.Transformer
 }
 
-// TransforDataToThird implement service S2TBroker.TransforDataToThird
-func (svr *Server) TransforDataToThird(ctx context.Context, p *bmsg.ParamToThird) (*bmsg.ResultToThird, error) {
-	if svr.t.ID() != p.GetTID() {
+// TransforDataToService implement service T2SBroker.TransforDataToService
+func (svr *Server) TransforDataToService(ctx context.Context, p *bmsg.ParamToService) (*bmsg.ResultToService, error) {
+	if svr.t.ID() != p.GetVersion() {
 		return nil, errConflictOfID
 	}
 
@@ -32,7 +32,7 @@ func (svr *Server) TransforDataToThird(ctx context.Context, p *bmsg.ParamToThird
 		return nil, err
 	}
 
-	return &bmsg.ResultToThird{
+	return &bmsg.ResultToService{
 		State:  bmsg.EnumState_SUCCESS,
 		Method: tfr.Method,
 		Head:   tfr.Head,
@@ -41,9 +41,9 @@ func (svr *Server) TransforDataToThird(ctx context.Context, p *bmsg.ParamToThird
 	}, nil
 }
 
-// TransforDataFromThird implement service S2TBroker.TransforDataFromThird
-func (svr *Server) TransforDataFromThird(ctx context.Context, p *bmsg.ParamFromThird) (*bmsg.ResultFromThird, error) {
-	if svr.t.ID() != p.GetTID() {
+// TransforDataFromService implement service T2SBroker.TransforDataFromService
+func (svr *Server) TransforDataFromService(ctx context.Context, p *bmsg.ParamFromService) (*bmsg.ResultFromService, error) {
+	if svr.t.ID() != p.GetVersion() {
 		return nil, errConflictOfID
 	}
 
@@ -52,7 +52,7 @@ func (svr *Server) TransforDataFromThird(ctx context.Context, p *bmsg.ParamFromT
 		return nil, err
 	}
 
-	return &bmsg.ResultFromThird{
+	return &bmsg.ResultFromService{
 		State: bmsg.EnumState_SUCCESS,
 		Head:  tfr.Head,
 		Body:  tfr.Body,
@@ -72,6 +72,6 @@ func (svr *Server) run(hostport string, t base.Transformer) error {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterS2TBrokerServer(grpcServer, svr)
+	pb.RegisterT2SBrokerServer(grpcServer, svr)
 	return grpcServer.Serve(lis)
 }

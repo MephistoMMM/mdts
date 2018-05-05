@@ -9,7 +9,7 @@ import (
 
 const (
 	thirdPath   = "http://127.0.0.1:9000/"
-	servicePath = "http://127.0.0.1:9100/"
+	servicePath = "http://127.0.0.1:9010/"
 )
 
 // Echo ...

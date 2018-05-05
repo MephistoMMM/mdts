@@ -1,53 +1,110 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
+	s2t "mdts/brokerSDK/s2t/broker"
+	t2s "mdts/brokerSDK/t2s/broker"
 	"mdts/dts/request"
 	bmsg "mdts/protocols/brokermsg"
 	pts "mdts/protocols/dtsproto"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+)
+
+const (
+	s2tBrokerAddr = "127.0.0.1:9100"
+	t2sBrokerAddr = "127.0.0.1:9110"
 )
 
 // TransforDataToThird ...
-func TransforDataToThird(TID string, APICODE string, Data []byte) (
-	state bmsg.EnumState,
-	method bmsg.EnumMethod,
-	head map[string]string,
-	body []byte,
-	url string) {
+func TransforDataToThird(TID string, APICODE string, Data []byte) *bmsg.ResultToThird {
 
-	return 0, 1, make(map[string]string), Data, thirdPath + "cancelOrder"
+	conn, err := grpc.Dial(s2tBrokerAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer conn.Close()
+
+	client := s2t.NewS2TBrokerClient(conn)
+	result, err := client.TransforDataToThird(context.Background(), &bmsg.ParamToThird{
+		TID:     TID,
+		APICODE: APICODE,
+		Data:    Data,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return result
 }
 
 // TransforDataFromThird ...
-func TransforDataFromThird(TID string, APICODE string, Data []byte) (
-	state bmsg.EnumState,
-	head map[string]string,
-	body []byte) {
+func TransforDataFromThird(TID string, APICODE string, Data []byte) *bmsg.ResultFromThird {
 
-	return 0, make(map[string]string), Data
+	conn, err := grpc.Dial(s2tBrokerAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer conn.Close()
+
+	client := s2t.NewS2TBrokerClient(conn)
+	result, err := client.TransforDataFromThird(context.Background(), &bmsg.ParamFromThird{
+		TID:     TID,
+		APICODE: APICODE,
+		Data:    Data,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return result
 }
 
 // TransforDataToService ...
-func TransforDataToService(Version string, APICODE string, Data []byte) (
-	state bmsg.EnumState,
-	method bmsg.EnumMethod,
-	head map[string]string,
-	body []byte,
-	url string) {
+func TransforDataToService(Version string, APICODE string, Data []byte) *bmsg.ResultToService {
 
-	return 0, 1, make(map[string]string), Data, servicePath + "rescue/refuseOrder"
+	conn, err := grpc.Dial(t2sBrokerAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer conn.Close()
+
+	client := t2s.NewT2SBrokerClient(conn)
+	result, err := client.TransforDataToService(context.Background(), &bmsg.ParamToService{
+		Version: Version,
+		APICODE: APICODE,
+		Data:    Data,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return result
 }
 
 // TransforDataFromService ...
-func TransforDataFromService(Version string, APICODE string, Data []byte) (
-	state bmsg.EnumState,
-	head map[string]string,
-	body []byte) {
+func TransforDataFromService(Version string, APICODE string, Data []byte) *bmsg.ResultFromService {
 
-	return 0, make(map[string]string), Data
+	conn, err := grpc.Dial(t2sBrokerAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer conn.Close()
+
+	client := t2s.NewT2SBrokerClient(conn)
+	result, err := client.TransforDataFromService(context.Background(), &bmsg.ParamFromService{
+		Version: Version,
+		APICODE: APICODE,
+		Data:    Data,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return result
 }
 
 // HandleS2T ...
@@ -66,8 +123,8 @@ func HandleS2T(c *gin.Context) {
 	// Get Info Of TID From Etcd
 	log.Printf("Request To TID: %s.", head.TID)
 
-	state, _, _, bs, url := TransforDataToThird(head.TID, head.APICODE, body)
-	if state == bmsg.EnumState_FAILED {
+	result := TransforDataToThird(head.TID, head.APICODE, body)
+	if result.GetState() == bmsg.EnumState_FAILED {
 		c.JSON(200, &pts.CommResp{
 			Code:    pts.FAILED,
 			Message: "Broker(1) Error!",
@@ -75,7 +132,7 @@ func HandleS2T(c *gin.Context) {
 		return
 	}
 
-	_, byt, err := request.PostBytes(url, bs)
+	_, byt, err := request.PostBytes(result.GetURL(), result.GetBody())
 	if err != nil {
 		errStr := fmt.Sprintf("Invalid Response From Third: %v.", err)
 		log.Println(errStr)
@@ -86,8 +143,8 @@ func HandleS2T(c *gin.Context) {
 		return
 	}
 
-	state, _, byt = TransforDataFromThird(head.TID, head.APICODE, byt)
-	if state == bmsg.EnumState_FAILED {
+	result2 := TransforDataFromThird(head.TID, head.APICODE, byt)
+	if result2.GetState() == bmsg.EnumState_FAILED {
 		c.JSON(200, &pts.CommResp{
 			Code:    pts.FAILED,
 			Message: "Broker(2) Error!",
@@ -95,7 +152,7 @@ func HandleS2T(c *gin.Context) {
 		return
 	}
 
-	c.Data(200, "application/json", byt)
+	c.Data(200, "application/json", result2.GetBody())
 }
 
 // HandleT2S ...
@@ -114,8 +171,8 @@ func HandleT2S(c *gin.Context) {
 	// Get Info Of Version From Etcd
 	log.Printf("Request To Version: %s.", head.Version)
 
-	state, _, _, bs, url := TransforDataToService(head.Version, head.APICODE, body)
-	if state == bmsg.EnumState_FAILED {
+	result := TransforDataToService(head.Version, head.APICODE, body)
+	if result.GetState() == bmsg.EnumState_FAILED {
 		c.JSON(200, &pts.CommResp{
 			Code:    pts.FAILED,
 			Message: "Broker(1) Error!",
@@ -123,7 +180,7 @@ func HandleT2S(c *gin.Context) {
 		return
 	}
 
-	_, byt, err := request.PostBytes(url, bs)
+	_, byt, err := request.PostBytes(result.GetURL(), result.GetBody())
 	if err != nil {
 		errStr := fmt.Sprintf("Invalid Response From Service: %v.", err)
 		log.Println(errStr)
@@ -134,8 +191,8 @@ func HandleT2S(c *gin.Context) {
 		return
 	}
 
-	state, _, byt = TransforDataFromService(head.Version, head.APICODE, byt)
-	if state == bmsg.EnumState_FAILED {
+	result2 := TransforDataFromService(head.Version, head.APICODE, byt)
+	if result2.GetState() == bmsg.EnumState_FAILED {
 		c.JSON(200, &pts.CommResp{
 			Code:    pts.FAILED,
 			Message: "Broker(2) Error!",
@@ -143,5 +200,5 @@ func HandleT2S(c *gin.Context) {
 		return
 	}
 
-	c.Data(200, "application/json", byt)
+	c.Data(200, "application/json", result2.GetBody())
 }

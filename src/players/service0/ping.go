@@ -16,7 +16,7 @@ import (
 
 const (
 	dtsAddress = "http://127.0.0.1:7080/v1/"
-	hostport   = ":9100"
+	hostport   = ":9010"
 	version    = "1.0.0"
 )
 
