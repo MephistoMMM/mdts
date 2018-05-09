@@ -27,6 +27,9 @@ type confunit struct {
 	ReqPoolSize int
 	// second
 	ReqClientTimeOut int
+
+	EndPoints []string
+	EtcdPath  string
 }
 
 type envconf struct {
@@ -77,6 +80,11 @@ var (
 	ReqPoolSize int
 	// ReqClientTimeOut 请求Client超时时间
 	ReqClientTimeOut time.Duration
+
+	// EndPoints etcd节点
+	EndPoints []string
+	// EtcdPath 服务的前缀
+	EtcdPath string
 )
 
 var defaultconfunit = confunit{
@@ -90,6 +98,9 @@ var defaultconfunit = confunit{
 
 	ReqPoolSize:      10,
 	ReqClientTimeOut: 2, // unit: second
+
+	EndPoints: []string{"133.130.119.62:2379", "133.130.119.62:2381", "133.130.119.62:2383"},
+	EtcdPath:  "broker/",
 }
 
 var defaultconf = envconf{defaultconfunit, defaultconfunit, defaultconfunit}
@@ -159,4 +170,9 @@ func init() {
 	// Certificates
 	ServerCrt = path.Join(cc.ServerCrtRoot, cc.ServerCrt)
 	ServerKey = path.Join(cc.ServerCrtRoot, cc.ServerKey)
+
+	// Etcd
+	EndPoints = cc.EndPoints
+	EtcdPath = cc.EtcdPath
+
 }

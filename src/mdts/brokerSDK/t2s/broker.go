@@ -14,11 +14,33 @@ import (
 
 var (
 	errConflictOfID = errors.New("Error Conflict Of Version")
+	endpoints       = []string{"133.130.119.62:2379", "133.130.119.62:2381", "133.130.119.62:2383"}
 )
 
 // Server provide a method to run a grpc server
 type Server struct {
 	t base.Transformer
+	s *base.Service
+}
+
+func NewServer(T string, ip string, port string) *Server {
+	service, err := base.NewService(T, ip, port, endpoints)
+	if err != nil {
+		log.Fatalln(err)
+		return nil
+	}
+
+	server := &Server{
+		s: service,
+	}
+
+	go func() {
+		log.Println("Discovery Service Start.")
+		service.Start()
+		log.Println("Discovery Service Stop.")
+	}()
+
+	return server
 }
 
 // TransforDataToService implement service T2SBroker.TransforDataToService
