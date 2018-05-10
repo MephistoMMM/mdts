@@ -4,17 +4,32 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math/rand"
+	"mdts/dts/conf"
 	dproto "mdts/protocols/discovery"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
 )
 
+var EtcdMaster *Master
+
+func init() {
+	master, err := NewMaster(conf.EndPoints, conf.EtcdPath)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	EtcdMaster = master
+}
+
 // Master watch etcd to implement service discovery
 // etcd path: brokers/<type>_<hash: hash(time)>
 type Master struct {
 	Path   string
+	locker sync.RWMutex
 	Nodes  map[string]*BrokerMap
 	Client *clientv3.Client
 }
@@ -66,6 +81,9 @@ func NewMaster(endpoints []string, watchPath string) (*Master, error) {
 }
 
 func (m *Master) AddBroker(info *dproto.BrokerInfo) {
+	m.locker.Lock()
+	defer m.locker.Unlock()
+
 	bm, ok := m.Nodes[info.Type]
 	if !ok {
 		bm = NewBrokerMap(info.Type)
@@ -76,6 +94,9 @@ func (m *Master) AddBroker(info *dproto.BrokerInfo) {
 }
 
 func (m *Master) DeleteBroker(Type string, hash string) {
+	m.locker.Lock()
+	defer m.locker.Unlock()
+
 	bm, ok := m.Nodes[Type]
 	if !ok {
 		return
@@ -87,16 +108,31 @@ func (m *Master) DeleteBroker(Type string, hash string) {
 	}
 }
 
-func GetBrokerInfo(ev *clientv3.Event) *dproto.BrokerInfo {
+// GetRandomBrokerInfo get random BrokerInfo from Nodes map, if not exist, return nil false
+func (m *Master) GetRandomBrokerInfo(Type string) (*dproto.BrokerInfo, bool) {
+	m.locker.RLock()
+	defer m.locker.RUnlock()
+
+	bm, ok := m.Nodes[Type]
+	if !ok {
+		return nil, ok
+	}
+
+	n := rand.Intn(bm.Len())
+	info, _ := bm.Brokers.GetIV(n).(*dproto.BrokerInfo)
+	return info, true
+}
+
+func parseBrokerInfo(value []byte) *dproto.BrokerInfo {
 	info := &dproto.BrokerInfo{}
-	err := json.Unmarshal([]byte(ev.Kv.Value), info)
+	err := json.Unmarshal(value, info)
 	if err != nil {
 		log.Println(err)
 	}
 	return info
 }
 
-func GetBrokerInfoFromKey(key string) (Type string, hash string) {
+func parseBrokerInfoFromKey(key string) (Type string, hash string) {
 	slashPostion := strings.IndexByte(key, '/')
 	key = key[slashPostion+1:]
 	items := strings.Split(key, "_")
@@ -105,19 +141,40 @@ func GetBrokerInfoFromKey(key string) (Type string, hash string) {
 }
 
 func (m *Master) WatchNodes() {
+	// TODO: Fetch Exist Nodes First
 	rch := m.Client.Watch(context.Background(), m.Path, clientv3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			switch ev.Type {
 			case clientv3.EventTypePut:
 				log.Printf("[%s] %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
-				info := GetBrokerInfo(ev)
+				info := parseBrokerInfo(ev.Kv.Value)
 				m.AddBroker(info)
 			case clientv3.EventTypeDelete:
 				log.Printf("[%s] %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
-				Type, hash := GetBrokerInfoFromKey(string(ev.Kv.Key))
+				Type, hash := parseBrokerInfoFromKey(string(ev.Kv.Key))
 				m.DeleteBroker(Type, hash)
 			}
 		}
 	}
+}
+
+func (m *Master) Start() error {
+
+	resp, err := m.Client.Get(context.Background(), m.Path, clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+
+	for _, ev := range resp.Kvs {
+		log.Printf("%s : %s\n", ev.Key, ev.Value)
+		info := parseBrokerInfo(ev.Value)
+		m.AddBroker(info)
+	}
+
+	log.Println("Discovery Master Start.")
+	m.WatchNodes()
+	log.Println("Discovery Master End.")
+
+	return nil
 }

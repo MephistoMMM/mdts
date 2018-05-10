@@ -8,6 +8,7 @@ import (
 	pb "mdts/brokerSDK/t2s/broker"
 	bmsg "mdts/protocols/brokermsg"
 	"net"
+	"sync"
 
 	"google.golang.org/grpc"
 )
@@ -19,26 +20,24 @@ var (
 
 // Server provide a method to run a grpc server
 type Server struct {
-	t base.Transformer
-	s *base.Service
+	t    base.Transformer
+	once sync.Once
+	s    *base.Service
 }
 
-func NewServer(T string, ip string, port string) *Server {
-	service, err := base.NewService(T, ip, port, endpoints)
+// normally, registerAddr == hostport , but if broker is run in docker, registerAddr is the public ip and port
+
+func NewServer(T string, registerAddr string, t base.Transformer) *Server {
+	service, err := base.NewService(T, registerAddr, endpoints)
 	if err != nil {
 		log.Fatalln(err)
 		return nil
 	}
 
 	server := &Server{
+		t: t,
 		s: service,
 	}
-
-	go func() {
-		log.Println("Discovery Service Start.")
-		service.Start()
-		log.Println("Discovery Service Stop.")
-	}()
 
 	return server
 }
@@ -82,12 +81,20 @@ func (svr *Server) TransforDataFromService(ctx context.Context, p *bmsg.ParamFro
 }
 
 // Run run server
-func (svr *Server) Run(hostport string, t base.Transformer) error {
-	return svr.run(hostport, t)
+func (svr *Server) Run(hostport string) (err error) {
+	svr.once.Do(func() {
+		err = svr.run(hostport)
+	})
+
+	return err
 }
 
-func (svr *Server) run(hostport string, t base.Transformer) error {
-	svr.t = t
+func (svr *Server) run(hostport string) error {
+	go func() {
+		log.Println("Discovery Service Start.")
+		svr.s.Start()
+		log.Println("Discovery Service Stop.")
+	}()
 
 	lis, err := net.Listen("tcp", hostport)
 	if err != nil {

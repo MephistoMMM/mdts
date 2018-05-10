@@ -44,14 +44,9 @@ func main() {
 		return rIn.Run(conf.InHostport)
 	})
 	g.Go(func() error {
-		master, err := discovery.NewMaster(conf.EndPoints, conf.EtcdPath)
-		if err != nil {
+		if err := discovery.EtcdMaster.Start(); err != nil {
 			return err
 		}
-
-		log.Println("Discovery Master Start.")
-		master.WatchNodes()
-		log.Println("Discovery Master End.")
 
 		return nil
 	})

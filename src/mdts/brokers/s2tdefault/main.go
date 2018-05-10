@@ -50,9 +50,9 @@ const (
 
 func main() {
 	trans := NewDefaultTrans(ID, URL)
-	server := s2t.NewServer("a3x77n02", "0.0.0.0", "9100")
+	server := s2t.NewServer("a3x77n02", "127.0.0.1:9100", trans)
 
-	if err := server.Run(hostport, trans); err != nil {
+	if err := server.Run(":9100"); err != nil {
 		log.Fatalln(err)
 	}
 }

@@ -37,7 +37,7 @@ type Service struct {
 	client  *clientv3.Client
 }
 
-func NewService(t string, ip string, port string, endpoints []string) (*Service, error) {
+func NewService(t string, hostport string, endpoints []string) (*Service, error) {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: 2 * time.Second,
@@ -54,8 +54,7 @@ func NewService(t string, ip string, port string, endpoints []string) (*Service,
 		Type: t,
 		Hash: hash,
 		Info: &dproto.BrokerInfo{
-			IP:        ip,
-			Port:      port,
+			HostPort:  hostport,
 			Type:      t,
 			Hash:      hash,
 			StartTime: un,
