@@ -15,10 +15,29 @@ import (
 )
 
 const (
-	dtsAddress = "http://127.0.0.1:7081/v1/"
-	hostport   = ":9000"
-	tid        = "a3x77n02"
+	deftAddress  = "http://127.0.0.1:7081/v1/"
+	deftHostport = ":9000"
+	deftTid      = "a3x77n02"
 )
+
+var (
+	dtsAddress = deftAddress
+	hostport   = deftHostport
+	tid        = deftTid
+)
+
+func init() {
+	if address := os.Getenv("DTS_ADDRESS"); address != "" {
+		dtsAddress = address
+	}
+	if hp := os.Getenv("DTS_HOSTPORT"); hp != "" {
+		hostport = hp
+	}
+	if v := os.Getenv("DTS_TID"); v != "" {
+		tid = v
+	}
+
+}
 
 var req = gorequest.New()
 
@@ -29,7 +48,12 @@ func receiveCancelOrder(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		log.Fatalf("Receive Cancel Order Error: %v.", err)
+		log.Printf("Receive Cancel Order Error: %v.", err)
+		c.JSON(200, &pts.CommResp{
+			Code:    pts.FAILED,
+			Message: err.Error(),
+		})
+		return
 	}
 
 	log.Printf("Receive Cancel Order: {code: '%s', remark: '%s'}.",
@@ -55,20 +79,34 @@ func receiveCancelOrder(c *gin.Context) {
 			Set("Sender", tid).
 			SendStruct(&data).EndBytes()
 		if errs != nil {
-			log.Fatalf("Ping Error: %v.", errs)
+			log.Printf("Ping Error: %v.", errs)
+			c.JSON(200, &pts.CommResp{
+				Code:    pts.FAILED,
+				Message: "Ping Error",
+			})
+			return
 		}
 
 		var resData pts.CommResp
 		if err := json.Unmarshal(body, &resData); err != nil {
-			log.Fatalf("Send Refuse Order Error: %v.\n", err)
+			log.Printf("Send Refuse Order Error: %v.\n", err)
+			c.JSON(200, &pts.CommResp{
+				Code:    pts.FAILED,
+				Message: err.Error(),
+			})
+			return
 		}
 
 		if resData.Code != pts.SUCCESS {
-			log.Fatalf("Send Refuse Order Error: FAILED, %s.\n", resData.Message)
+			log.Printf("Send Refuse Order Error: FAILED, %s.\n", resData.Message)
+			c.JSON(200, &pts.CommResp{
+				Code:    pts.FAILED,
+				Message: "Send Refuse Order Error: FAILED.\n",
+			})
+			return
 		}
 
 		log.Printf("Refuse Order Success: %s .\n", string(resData.Data))
-		os.Exit(0)
 	}()
 
 	c.JSON(200, &pts.CommResp{

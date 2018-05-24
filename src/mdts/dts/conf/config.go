@@ -89,7 +89,7 @@ var (
 
 var defaultconfunit = confunit{
 	OutHostport: ":8081",
-	InHostport:  "127.0.0.1:8080",
+	InHostport:  ":8080",
 	Usehttps:    false,
 
 	ServerCrtRoot: "./tls/",
@@ -99,7 +99,7 @@ var defaultconfunit = confunit{
 	ReqPoolSize:      10,
 	ReqClientTimeOut: 2, // unit: second
 
-	EndPoints: []string{"133.130.119.62:2379", "133.130.119.62:2381", "133.130.119.62:2383"},
+	EndPoints: []string{"150.95.157.181:2385", "150.95.157.181:2381", "150.95.157.181:2383"},
 	EtcdPath:  "broker/",
 }
 

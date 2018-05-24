@@ -15,7 +15,7 @@ import (
 
 var (
 	errConflictOfID = errors.New("Error Conflict Of TID")
-	endpoints       = []string{"133.130.119.62:2379", "133.130.119.62:2381", "133.130.119.62:2383"}
+	endpoints       = []string{"150.95.157.181:2385", "150.95.157.181:2381", "150.95.157.181:2383"}
 )
 
 // Server provide a method to run a grpc server
