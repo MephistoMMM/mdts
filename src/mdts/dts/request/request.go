@@ -76,12 +76,17 @@ func PostXML(hostport string, v string) (*http.Response, []byte, error) {
 }
 
 // PostBytes send post request and get response
-func PostBytes(hostport string, bs []byte) (*http.Response, []byte, error) {
+func PostBytes(hostport string, contentType string, bs []byte) (*http.Response, []byte, error) {
 
 	action := func(req *greq.SuperAgent) (resp *http.Response, body []byte, err error) {
 
+		if contentType == "" {
+			contentType = "application/json"
+		}
+
 		var errs []error
-		resp, body, errs = req.Post(hostport).Type("json").
+		resp, body, errs = req.Post(hostport).
+			Set("Content-Type", contentType).
 			Send(string(bs)).EndBytes()
 
 		if errs != nil {

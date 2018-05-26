@@ -9,10 +9,19 @@ import (
 	"errors"
 	"log"
 	dproto "mdts/protocols/discovery"
+	"os"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
 )
+
+var isDev bool = true
+
+func init() {
+	if os.Getenv("ETCD_ENV") == "release" {
+		isDev = false
+	}
+}
 
 func Hash(t string, un uint64) string {
 	// 8 + len(t)
@@ -83,7 +92,9 @@ func (s *Service) Start() error {
 				s.revoke()
 				return nil
 			} else {
-				log.Printf("Recv reply from service: %s, ttl:%d", s.Name, ka.TTL)
+				if isDev {
+					log.Printf("Recv reply from service: %s, ttl:%d", s.Name, ka.TTL)
+				}
 			}
 		}
 	}

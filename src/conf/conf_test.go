@@ -1,6 +1,9 @@
 package conf
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 type TestConf struct {
 	K1 int    `json:"Key1"`
@@ -25,4 +28,22 @@ func TestLoadConf(t *testing.T) {
 
 	t.Log(config)
 
+}
+
+func TestEnvConf(t *testing.T) {
+	confMap := map[string]string{
+		"app": "1",
+		"bpp": "2",
+	}
+
+	InitConfMapFromEnv(confMap)
+	if confMap["bpp"] != "2" {
+		t.Error("value of 'bpp' in confMap is error.")
+	}
+
+	os.Setenv("BPP", "3")
+	InitConfMapFromEnv(confMap)
+	if confMap["bpp"] != "3" {
+		t.Error("value of 'bpp' in confMap is error.")
+	}
 }

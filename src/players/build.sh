@@ -2,23 +2,24 @@
 # Usage:
 #   ./build.sh <app_name>
 DOCKER_USER=mpsss
-PRO_ROOT=${pwd}
+PRO_ROOT=${PWD}
 
-if [ "$1" == "" ]; then
-    echo "Error: Lack Argument <app_name>"
+if [ "$1" == "" ] || [ "$2" == "" ]; then
+    echo "Error: Lack Argument <app_dir> <app_name>"
     exit 1
 fi
-PLAYER=$1
+PLAYER_DIR=$1
+PLAYER_NAME=$2
 
-if [ "$2" == "" ]; then
+if [ "$3" == "" ]; then
     VERSION="latest"
 else
-    VERSION=$2
+    VERSION=$3
 fi
 
-cd $1
+cd $PLAYER_DIR
 go build -o app
 cd $PRO_ROOT
 
-docker build --build-arg PLAYER=$PLAYER -t $PLAYER:$VERSION .
-docker tag $PLAYER:$VERSION $DOCKER_USER/$PLAYER:$VERSION
+docker build --build-arg PLAYER=$PLAYER_DIR -t $PLAYER_NAME:$VERSION .
+docker tag $PLAYER_NAME:$VERSION $DOCKER_USER/$PLAYER_NAME:$VERSION

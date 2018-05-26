@@ -41,9 +41,8 @@ func init() {
 var req = gorequest.New()
 
 func sendCancelOrder(c *gin.Context) {
-	data := `{"orderCode":"1111000011110000", "remark":"Just A Test"}`
+	data := `{"orderCode":"12345678", "remark":"Just A Test"}`
 
-	log.Println("发送撤销工单请求：")
 	_, body, errs := req.Post(dtsAddress+"s2t").Type("json").
 		Set("Sender", "1.0.0").
 		Set("TID", "xioxioxi").
@@ -57,9 +56,7 @@ func sendCancelOrder(c *gin.Context) {
 		})
 		return
 	}
-	log.Println(string(data))
 
-	log.Println("\n收到撤单响应：")
 	var resData pts.CommResp
 	if err := json.Unmarshal(body, &resData); err != nil {
 		c.JSON(200, &pts.CommResp{
@@ -76,8 +73,8 @@ func sendCancelOrder(c *gin.Context) {
 		})
 		return
 	}
-	v, _ := json.MarshalIndent(&resData, "", "   ")
-	log.Println(string(v))
+
+	log.Printf("Cancel Order Success: %s .\n", string(resData.Data))
 
 	c.Data(200, "application/json", []byte{'{', '}'})
 }

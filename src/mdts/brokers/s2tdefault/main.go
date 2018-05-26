@@ -1,6 +1,7 @@
 package main
 
 import (
+	"conf"
 	"log"
 	bsdk "mdts/brokerSDK/base"
 	"mdts/brokerSDK/s2t"
@@ -41,18 +42,22 @@ func (dt *defaultTrans) TransFrom(APICODE string, Data []byte) (*bsdk.TransFromR
 	}, nil
 }
 
-const (
-	ID  = "a3x77n02"
-	URL = "http://127.0.0.1:9000/cancelOrder"
+var confMap = map[string]string{
+	"ID":         "a3x77n02",
+	"URL":        "http://127.0.0.1:9000/cancelOrder",
+	"RegistAddr": "127.0.0.1:9100",
+	"Hostport":   ":9100",
+}
 
-	hostport = ":9100"
-)
+func init() {
+	conf.InitConfMapFromEnv(confMap)
+}
 
 func main() {
-	trans := NewDefaultTrans(ID, URL)
-	server := s2t.NewServer("a3x77n02", "127.0.0.1:9100", trans)
+	trans := NewDefaultTrans(confMap["ID"], confMap["URL"])
+	server := s2t.NewServer(confMap["ID"], confMap["RegistAddr"], trans)
 
-	if err := server.Run(":9100"); err != nil {
+	if err := server.Run(confMap["Hostport"]); err != nil {
 		log.Fatalln(err)
 	}
 }

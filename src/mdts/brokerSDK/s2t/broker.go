@@ -1,6 +1,7 @@
 package s2t
 
 import (
+	"conf"
 	"context"
 	"errors"
 	"log"
@@ -8,15 +9,31 @@ import (
 	pb "mdts/brokerSDK/s2t/broker"
 	bmsg "mdts/protocols/brokermsg"
 	"net"
+	"strings"
 	"sync"
 
 	"google.golang.org/grpc"
 )
 
+var confMap = map[string]string{
+	"endpoints": "",
+}
+
 var (
 	errConflictOfID = errors.New("Error Conflict Of TID")
 	endpoints       = []string{"150.95.157.181:2385", "150.95.157.181:2381", "150.95.157.181:2383"}
 )
+
+func init() {
+	conf.InitConfMapFromEnv(confMap)
+
+	if confMap["endpoints"] != "" {
+		endpoints = strings.Split(confMap["endpoints"], ",")
+		for i, v := range endpoints {
+			endpoints[i] = strings.TrimSpace(v)
+		}
+	}
+}
 
 // Server provide a method to run a grpc server
 type Server struct {

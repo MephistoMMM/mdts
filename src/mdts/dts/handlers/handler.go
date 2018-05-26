@@ -146,7 +146,7 @@ func HandleS2T(c *gin.Context) {
 		return
 	}
 
-	_, byt, err := request.PostBytes(result.GetURL(), result.GetBody())
+	_, byt, err := request.PostBytes(result.GetURL(), result.GetHead()["Content-Type"], result.GetBody())
 	if err != nil {
 		errStr := fmt.Sprintf("Invalid Response From Third: %v.", err)
 		log.Println(errStr)
@@ -208,7 +208,7 @@ func HandleT2S(c *gin.Context) {
 		return
 	}
 
-	_, byt, err := request.PostBytes(result.GetURL(), result.GetBody())
+	_, byt, err := request.PostBytes(result.GetURL(), result.GetHead()["Content-Type"], result.GetBody())
 	if err != nil {
 		errStr := fmt.Sprintf("Invalid Response From Service: %v.", err)
 		log.Println(errStr)
