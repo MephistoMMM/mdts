@@ -1,6 +1,7 @@
 package main
 
 import (
+	"color"
 	"conf"
 	"log"
 	bsdk "mdts/brokerSDK/base"
@@ -25,7 +26,8 @@ func (dt *defaultTrans) ID() string {
 }
 
 func (dt *defaultTrans) TransTo(APICODE string, Data []byte) (*bsdk.TransToResult, error) {
-	log.Println(string(Data))
+	log.Printf("%s : %s .", color.Green("收到业务请求数据"), string(Data))
+	log.Println(color.Red("不经任何转换"))
 	return &bsdk.TransToResult{
 		Method: bmsg.EnumMethod_HttpPost,
 		Head:   make(map[string]string),
@@ -35,7 +37,8 @@ func (dt *defaultTrans) TransTo(APICODE string, Data []byte) (*bsdk.TransToResul
 }
 
 func (dt *defaultTrans) TransFrom(APICODE string, Data []byte) (*bsdk.TransFromResult, error) {
-	log.Println(string(Data))
+	log.Printf("%s : %s .", color.Yellow("收到业务响应数据"), string(Data))
+	log.Println(color.Red("不经任何转换"))
 	return &bsdk.TransFromResult{
 		Head: make(map[string]string),
 		Body: Data,

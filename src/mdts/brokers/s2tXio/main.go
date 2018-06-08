@@ -81,23 +81,24 @@ type CancelOrderStruct struct {
 }
 
 type AddOrderStruct struct {
-	OrderCode  string    `json:"orderCode" xml:"orderCode" binding:"required,numeric,max=40"`
-	OrderType  int       `json:"orderType" xml:"orderType" binding:"required,gte=1,lte=2"`
-	AlarmCode  string    `json:"alarmCode" xml:"alarmCode" binding:"required,numeric,max=40"`
-	AlarmType  alarmType `json:"alarmType" xml:"alarmType" binding:"required,gte=9000001,lte=9000004"`
-	HappenTime string    `json:"happenTime" xml:"happenTime" binding:"required"`
-	LiftCode   string    `json:"liftCode" xml:"liftCode" binding:"required,alphanum,max=40"`
-	StreetAddr string    `json:"streetAddr" xml:"streetAddr" binding:"max=120"`
-	AreaAddr   string    `json:"areaAddr" xml:"areaAddr" binding:"max=32"`
-	LiftAddr   string    `json:"liftAddr" xml:"liftAddr" binding:"max=40"`
-	Longitude  string    `json:"longitude" xml:"longitude" binding:"omitempty,longitude,max=20"`
-	Latitude   string    `json:"latitude" xml:"latitude" binding:"omitempty,latitude,max=20"`
-	Remark     string    `json:"remark" xml:"remark" binding:"max=100"`
+	OrderCode  string `json:"orderCode" xml:"orderCode" binding:"required,numeric,max=40"`
+	OrderType  int    `json:"orderType" xml:"orderType" binding:"required,gte=1,lte=2"`
+	AlarmCode  string `json:"alarmCode" xml:"alarmCode" binding:"required,numeric,max=40"`
+	AlarmType  int    `json:"alarmType" xml:"alarmType" binding:"required,gte=9000001,lte=9000004"`
+	HappenTime string `json:"happenTime" xml:"happenTime" binding:"required"`
+	LiftCode   string `json:"liftCode" xml:"liftCode" binding:"required,alphanum,max=40"`
+	StreetAddr string `json:"streetAddr" xml:"streetAddr" binding:"max=120"`
+	AreaAddr   string `json:"areaAddr" xml:"areaAddr" binding:"max=32"`
+	LiftAddr   string `json:"liftAddr" xml:"liftAddr" binding:"max=40"`
+	Longitude  string `json:"longitude" xml:"longitude" binding:"omitempty,longitude,max=20"`
+	Latitude   string `json:"latitude" xml:"latitude" binding:"omitempty,latitude,max=20"`
+	Remark     string `json:"remark" xml:"remark" binding:"max=100"`
 }
 
 // 西奥天梯平台
 type xioLift struct {
 	sysID                string
+	addOrderServiceID    string
 	cancelOrderServiceID string
 	count                uint
 }

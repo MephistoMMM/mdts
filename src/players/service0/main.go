@@ -86,6 +86,7 @@ func sendCancelOrder(c *gin.Context) {
 func run(c *gin.Context) {
 	data := `{"orderCode":"12345678", "remark":"Just A Test"}`
 
+	log.Printf("%s : %s", color.Green("发送请求数据"), data)
 	_, body, errs := req.Post(dtsAddress+"s2t").Type("json").
 		Set("Sender", "1.0.0").
 		Set("TID", "a3x77n02").
@@ -117,7 +118,7 @@ func run(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Cancel Order Success: %s .\n", string(resData.Data))
+	log.Printf("%s : %s .\n", color.Yellow("得到响应数据"), string(body))
 
 	c.Data(200, "application/json", []byte{'{', '}'})
 }
@@ -138,7 +139,7 @@ func receiveRefuseOrder(c *gin.Context) {
 	}
 
 	// Show Ping Data
-	log.Printf("Receive Refuse Order: {code: '%s', reasonType: %v, remark: '%s'}.",
+	log.Printf("%s : {code: '%s', reasonType: %v, remark: '%s'}.", color.Cyan("收到请求数据"),
 		body.OrderCode, body.ReasonType, body.Remark)
 
 	c.JSON(200, &pts.CommResp{
@@ -151,7 +152,7 @@ func receiveRefuseOrder(c *gin.Context) {
 func main() {
 	router := gin.Default()
 	router.POST("/rescue/refuseOrder", receiveRefuseOrder)
-	router.GET("/run", run)
+	router.GET("/run/default", run)
 	router.GET("/run/cancelOrder", sendCancelOrder)
 
 	if err := router.Run(hostport); err != nil {

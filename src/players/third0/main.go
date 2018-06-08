@@ -4,6 +4,7 @@
 package main
 
 import (
+	"color"
 	"encoding/json"
 	"log"
 	"os"
@@ -56,7 +57,7 @@ func receiveCancelOrder(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Receive Cancel Order: {code: '%s', remark: '%s'}.",
+	log.Printf("%s : {code: '%s', remark: '%s'}.", color.Cyan("收到请求数据"),
 		body.OrderCode, body.Remark)
 
 	go func() {
@@ -73,6 +74,7 @@ func receiveCancelOrder(c *gin.Context) {
 			Remark:     "Just A Test",
 		}
 
+		log.Printf(`%s : {"orderCode": %s, "reasonType": ["999", "666"], "remark": "Just A Test"}`, color.Green("发送请求数据"), body.OrderCode)
 		_, body, errs := req.Post(dtsAddress+"t2s").Type("json").
 			Set("Version", "1.0.0").
 			Set("APICODE", "00000003").
@@ -106,7 +108,7 @@ func receiveCancelOrder(c *gin.Context) {
 			return
 		}
 
-		log.Printf("Refuse Order Success: %s .\n", string(resData.Data))
+		log.Printf("%s : %s .\n", color.Yellow("得到响应数据"), string(body))
 	}()
 
 	c.JSON(200, &pts.CommResp{
