@@ -4,6 +4,7 @@
 package main
 
 import (
+	"color"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -120,7 +121,7 @@ func receiveCancelOrder(c *gin.Context) {
 		return
 	}
 
-	log.Println("收到撤销工单请求：")
+	log.Println(color.Green("收到撤销工单请求："))
 	output, err := xml.MarshalIndent(&req, "", "   ")
 	if err != nil {
 		log.Println(err)
@@ -129,7 +130,39 @@ func receiveCancelOrder(c *gin.Context) {
 	}
 	log.Println(string(output))
 
-	log.Println("\n响应撤单请求：")
+	log.Println(color.Yellow("\n响应撤单请求："))
+	res := combineResponse("COMPLETE", 0, "")
+	log.Println(string(res))
+
+	c.Data(200, "application/xml", res)
+}
+
+func receiveAddOrder(c *gin.Context) {
+	datas, err := c.GetRawData()
+	if err != nil {
+		log.Println(err)
+		c.Data(200, "application/xml", combineResponse("FAIL", 100, ""))
+		return
+	}
+
+	var req xioRequest
+	err = xml.Unmarshal(datas, &req)
+	if err != nil {
+		log.Println(err)
+		c.Data(200, "application/xml", combineResponse("FAIL", 100, ""))
+		return
+	}
+
+	log.Println(color.Green("收到撤销工单请求："))
+	output, err := xml.MarshalIndent(&req, "", "   ")
+	if err != nil {
+		log.Println(err)
+		c.Data(200, "application/xml", combineResponse("FAIL", 100, ""))
+		return
+	}
+	log.Println(string(output))
+
+	log.Println(color.Yellow("\n响应撤单请求："))
 	res := combineResponse("COMPLETE", 0, "")
 	log.Println(string(res))
 
@@ -139,6 +172,7 @@ func receiveCancelOrder(c *gin.Context) {
 func main() {
 	router := gin.Default()
 	router.POST("/cancelOrder", receiveCancelOrder)
+	router.POST("/addOrder", receiveAddOrder)
 
 	if err := router.Run(hostport); err != nil {
 		log.Fatalln("Failed to run server: ", err)

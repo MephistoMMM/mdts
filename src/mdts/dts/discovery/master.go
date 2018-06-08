@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"color"
 	"context"
 	"encoding/json"
 	"log"
@@ -147,11 +148,11 @@ func (m *Master) WatchNodes() {
 		for _, ev := range wresp.Events {
 			switch ev.Type {
 			case clientv3.EventTypePut:
-				log.Printf("[%s] %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+				log.Printf("[%s] %q : %q\n", color.Green("PUT"), ev.Kv.Key, ev.Kv.Value)
 				info := parseBrokerInfo(ev.Kv.Value)
 				m.AddBroker(info)
 			case clientv3.EventTypeDelete:
-				log.Printf("[%s] %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+				log.Printf("[%s] %q\n", color.Red("DELETE"), ev.Kv.Key)
 				Type, hash := parseBrokerInfoFromKey(string(ev.Kv.Key))
 				m.DeleteBroker(Type, hash)
 			}
@@ -167,7 +168,7 @@ func (m *Master) Start() error {
 	}
 
 	for _, ev := range resp.Kvs {
-		log.Printf("%s : %s\n", ev.Key, ev.Value)
+		log.Printf("[%s] %s : %s\n", color.Cyan("FOUND"), ev.Key, ev.Value)
 		info := parseBrokerInfo(ev.Value)
 		m.AddBroker(info)
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"color"
 	"conf"
 	"encoding/json"
 	"encoding/xml"
@@ -79,6 +80,21 @@ type CancelOrderStruct struct {
 	Remark    string `json:"remark" xml:"remark" binding:"max=100"`
 }
 
+type AddOrderStruct struct {
+	OrderCode  string    `json:"orderCode" xml:"orderCode" binding:"required,numeric,max=40"`
+	OrderType  int       `json:"orderType" xml:"orderType" binding:"required,gte=1,lte=2"`
+	AlarmCode  string    `json:"alarmCode" xml:"alarmCode" binding:"required,numeric,max=40"`
+	AlarmType  alarmType `json:"alarmType" xml:"alarmType" binding:"required,gte=9000001,lte=9000004"`
+	HappenTime string    `json:"happenTime" xml:"happenTime" binding:"required"`
+	LiftCode   string    `json:"liftCode" xml:"liftCode" binding:"required,alphanum,max=40"`
+	StreetAddr string    `json:"streetAddr" xml:"streetAddr" binding:"max=120"`
+	AreaAddr   string    `json:"areaAddr" xml:"areaAddr" binding:"max=32"`
+	LiftAddr   string    `json:"liftAddr" xml:"liftAddr" binding:"max=40"`
+	Longitude  string    `json:"longitude" xml:"longitude" binding:"omitempty,longitude,max=20"`
+	Latitude   string    `json:"latitude" xml:"latitude" binding:"omitempty,latitude,max=20"`
+	Remark     string    `json:"remark" xml:"remark" binding:"max=100"`
+}
+
 // 西奥天梯平台
 type xioLift struct {
 	sysID                string
@@ -88,8 +104,31 @@ type xioLift struct {
 
 var XioLift = &xioLift{
 	sysID:                "01012",
+	addOrderServiceID:    "01009000000001",
 	cancelOrderServiceID: "01009000000002",
 	count:                1,
+}
+
+func (xl *xioLift) AddOrder(data []byte) (resbody []byte, err error) {
+	var addOrder AddOrderStruct
+	if err := json.Unmarshal(data, &addOrder); err != nil {
+		return nil, err
+	}
+
+	route := xl.getRoute(xl.addOrderServiceID)
+	d := &xioData{
+		Request: addOrder,
+	}
+	output, err := xml.MarshalIndent(&xioRequest{
+		Router: route,
+		Data:   d,
+	}, "", "   ")
+	if err != nil {
+		return nil, err
+	}
+
+	return output, nil
+
 }
 
 func (xl *xioLift) CancelOrder(data []byte) (resbody []byte, err error) {
@@ -171,8 +210,28 @@ func (dt *xioTrans) ID() string {
 }
 
 func (dt *xioTrans) TransTo(APICODE string, Data []byte) (*bsdk.TransToResult, error) {
-	if APICODE == "00000002" {
-		log.Println("收到业务请求数据：")
+	if APICODE == "00000001" {
+		log.Println(color.Green("收到业务请求数据："))
+		log.Println(string(Data))
+		v, err := XioLift.AddOrder(Data)
+		if err != nil {
+			return nil, err
+		}
+		head := map[string]string{
+			"Content-Type": "application/xml",
+		}
+		log.Println(color.Yellow("将其转化为:"))
+		log.Println(string(fmt.Sprintf(xioFormat, string(v))))
+
+		log.Println(string(v))
+		return &bsdk.TransToResult{
+			Method: bmsg.EnumMethod_HttpPost,
+			Head:   head,
+			Body:   []byte(fmt.Sprintf(xioFormat, string(v))),
+			URL:    dt.url,
+		}, nil
+	} else if APICODE == "00000002" {
+		log.Println(color.Green("收到业务请求数据："))
 		log.Println(string(Data))
 		v, err := XioLift.CancelOrder(Data)
 		if err != nil {
@@ -181,7 +240,7 @@ func (dt *xioTrans) TransTo(APICODE string, Data []byte) (*bsdk.TransToResult, e
 		head := map[string]string{
 			"Content-Type": "application/xml",
 		}
-		log.Println("将其转化为:")
+		log.Println(color.Yellow("将其转化为:"))
 		log.Println(string(fmt.Sprintf(xioFormat, string(v))))
 
 		log.Println(string(v))
@@ -201,9 +260,8 @@ func (dt *xioTrans) TransTo(APICODE string, Data []byte) (*bsdk.TransToResult, e
 }
 
 func (dt *xioTrans) TransFrom(APICODE string, Data []byte) (*bsdk.TransFromResult, error) {
-	log.Println(string(Data))
-	if APICODE == "00000002" {
-		log.Println("收到业务响应数据：")
+	if APICODE == "00000001" {
+		log.Println(color.Green("收到业务响应数据："))
 		log.Println(string(Data))
 		res, err := XioLift.UnmarshalResp(Data)
 		if err != nil {
@@ -214,7 +272,26 @@ func (dt *xioTrans) TransFrom(APICODE string, Data []byte) (*bsdk.TransFromResul
 		if err != nil {
 			return nil, err
 		}
-		log.Println("将其转化为:")
+		log.Println(color.Yellow("将其转化为:"))
+		log.Println(string(v))
+
+		return &bsdk.TransFromResult{
+			Head: make(map[string]string),
+			Body: v,
+		}, nil
+	} else if APICODE == "00000002" {
+		log.Println(color.Green("收到业务响应数据："))
+		log.Println(string(Data))
+		res, err := XioLift.UnmarshalResp(Data)
+		if err != nil {
+			return nil, err
+		}
+
+		v, err := json.MarshalIndent(res, "", "   ")
+		if err != nil {
+			return nil, err
+		}
+		log.Println(color.Yellow("将其转化为:"))
 		log.Println(string(v))
 
 		return &bsdk.TransFromResult{

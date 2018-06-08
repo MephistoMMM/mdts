@@ -4,6 +4,7 @@
 package main
 
 import (
+	"color"
 	"encoding/json"
 	"log"
 	"os"
@@ -43,7 +44,7 @@ var req = gorequest.New()
 func sendCancelOrder(c *gin.Context) {
 	data := `{"orderCode":"1111000011110000", "remark":"Just A Test"}`
 
-	log.Println("发送撤销工单请求：")
+	log.Println(color.Green("发送撤销工单请求："))
 	_, body, errs := req.Post(dtsAddress+"s2t").Type("json").
 		Set("Sender", "1.0.0").
 		Set("TID", "xioxioxi").
@@ -59,7 +60,7 @@ func sendCancelOrder(c *gin.Context) {
 	}
 	log.Println(string(data))
 
-	log.Println("\n收到撤单响应：")
+	log.Println(color.Yellow("\n收到撤单响应："))
 	var resData pts.CommResp
 	if err := json.Unmarshal(body, &resData); err != nil {
 		c.JSON(200, &pts.CommResp{
@@ -151,7 +152,7 @@ func main() {
 	router := gin.Default()
 	router.POST("/rescue/refuseOrder", receiveRefuseOrder)
 	router.GET("/run", run)
-	router.GET("/cancelOrder", sendCancelOrder)
+	router.GET("/run/cancelOrder", sendCancelOrder)
 
 	if err := router.Run(hostport); err != nil {
 		log.Fatalln("Failed to run server: ", err)
